@@ -42,19 +42,11 @@ local function getCellPercent(cellValue)
     return 0
 end
 
-local testingPercentage = 100
 local function getBatteryPercent(wgt)
-    if testingPercentage <= 0 then
-        return 0
-    end
-
-    testingPercentage = testingPercentage - .1
-    return math.floor(testingPercentage)
-
-    -- local voltage = getValue(wgt.options.Source)/wgt.options.Cells
-    -- local percentage = getCellPercent(voltage)
+    local voltage = getValue(wgt.options.Source)/wgt.options.Cells
+    local percentage = getCellPercent(voltage)
     
-    -- return percentage
+    return percentage
 end
 
 local function create(zone, options)
@@ -96,8 +88,8 @@ local function background(wgt)
 end
 
 local function refresh(wgt)
-    local x = wgt.zone.x + wgt.zone.w/2 - 23;
-    local y = wgt.zone.y + wgt.zone.h/2 - 14;
+    local x = wgt.zone.x + wgt.zone.w/2 - 14;
+    local y = wgt.zone.y + wgt.zone.h/2 - 19;
 
     percentage = getBatteryPercent(wgt)
 
@@ -108,29 +100,31 @@ local function refresh(wgt)
     lcd.drawFilledRectangle(wgt.zone.x, wgt.zone.y, wgt.zone.w, wgt.zone.h, SOLID)
 
     lcd.setColor(TEXT_COLOR, WHITE)
-    if percentage > 90 then 
-        lcd.drawText(x-5, y, "GREAT")
-    elseif percentage >= 80 then
-        lcd.drawText(x, y, "GOOD")
-    elseif percentage >= 60 then
-        lcd.drawText(x+13, y, "OK");
-    elseif percentage >= 40 then
-        lcd.drawText(x+5, y, "LOW");
-    elseif percentage >= 20 then
-        lcd.drawText(x+5,y, "BAD");
-    else
-        lcd.drawText(x+14,y, "!!!")
-    end
 
-    lcd.drawText(wgt.zone.x + wgt.zone.w - 30, wgt.zone.y + wgt.zone.h - 15, percentage .. "%", SMLSIZE)
+    if percentage == 100 then
+        lcd.drawText(x+5, y+10, "100%")
+    elseif percentage < 10 then
+        lcd.drawText(x+18,y, percentage, DBLSIZE)
+        lcd.drawText(x+38, y+2, "%", SMLSIZE)
+    else
+        lcd.drawText(x,y, percentage, DBLSIZE)
+        lcd.drawText(x+38, y+2, "%", SMLSIZE)
+    end
 
     lcd.setColor(TEXT_COLOR, originalColor)
 
+    local bx = wgt.zone.x + 2
+    local by = wgt.zone.y + 6
+    local bw = 17
+    local bh = wgt.zone.h*.75
+
+    local fh = bh - bh * (percentage/100)
+
+    lcd.drawRectangle(bx+5, by-3, bw-10, 3)
+    lcd.drawRectangle(bx, by, bw, bh)
+    lcd.drawFilledRectangle(bx, by+fh, bw, bh-fh)
+
     warnIfNeeded(percentage)
 end
-
-
-
-
 
 return { name = "BattWarn", options = _options, create = create, update = update, background = background, refresh = refresh }

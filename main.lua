@@ -43,7 +43,11 @@ local function getCellPercent(cellValue)
 end
 
 local function getBatteryPercent(wgt)
-    local voltage = getValue(wgt.options.Source)/wgt.options.Cells
+    if wgt.options.Sensor == nil then
+        return 0
+    end
+
+    local voltage = getValue(wgt.options.Sensor)/wgt.options.Cells
     local percentage = getCellPercent(voltage)
     
     return percentage
@@ -69,6 +73,10 @@ function playBatteryLow()
 end
 
 function warnIfNeeded(percentage)
+    if getRSSI() == 0 then
+        return
+    end
+
     if lastBatteryPercentage > 80 and percentage <= 80 then
         playFile("battery80.wav")
     elseif lastBatteryPercentage > 60 and percentage <= 60 then
@@ -92,7 +100,7 @@ local function refresh(wgt)
     local y = wgt.zone.y + wgt.zone.h/2 - 19;
 
     percentage = getBatteryPercent(wgt)
-
+   
     -- requires >= 2.3.11
     local originalColor = lcd.getColor(TEXT_COLOR)
 
@@ -101,7 +109,9 @@ local function refresh(wgt)
 
     lcd.setColor(TEXT_COLOR, WHITE)
 
-    if percentage == 100 then
+    if getRSSI() == 0 then
+        lcd.drawText(x+15,y+10, "---")
+    elseif percentage == 100 then
         lcd.drawText(x+5, y+10, "100%")
     elseif percentage < 10 then
         lcd.drawText(x+18,y, percentage, DBLSIZE)
